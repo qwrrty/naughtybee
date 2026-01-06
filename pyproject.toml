@@ -1,0 +1,7 @@
+[project]
+name = "naughtybee"
+version = "0.1.0"
+description = "Naughty words in the Spelling Bee puzzle"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = ["requests"]
