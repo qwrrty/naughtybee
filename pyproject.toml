@@ -3,5 +3,8 @@ name = "naughtybee"
 version = "0.1.0"
 description = "Naughty words in the Spelling Bee puzzle"
 readme = "README.md"
-requires-python = ">=3"
-dependencies = ["requests"]
+requires-python = ">=3.7"
+dependencies = [
+    "atproto",
+    "requests",
+]

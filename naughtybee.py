@@ -5,13 +5,15 @@ import json
 import re
 
 from html.parser import HTMLParser
-from pprint import pprint
 
 import requests
+
+from atproto import Client
 
 
 SPELLINGBEE_URL = "https://www.nytimes.com/puzzles/spelling-bee"
 NAUGHTY_WORDS_FILE = "wordlist.txt"
+BSKY_CREDS_FILE = "creds.json"
 
 
 class SpellingBeeScraper(HTMLParser):
@@ -55,19 +57,32 @@ class NaughtyBee():
         return set(self.puzzle_words) & set(self.naughty_words)
 
 
-def main(date: str = ""):
+def main(date="", dry_run=False):
     bee = NaughtyBee()
     naughty_words = bee.find_naughty_words()
+    post_text = "\n".join([w.upper() for w in sorted(naughty_words)])
+
+    with open(BSKY_CREDS_FILE, "r") as f:
+        creds = json.load(f)
+    client = Client()
+    client.login(creds["username"], creds["password"])
+    if dry_run:
+        print(f"Successful login as {creds['username']}")
+        print("Posting:")
+        print(post_text)
+    else:
+        client.send_post(text=post_text)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--date", type=str, help="date of the puzzle in YYYY-MM-DD format")
+    parser.add_argument("--dry-run", "-n", action="store_true", help="only print out results")
     args = parser.parse_args()
     if args.date:
         if not re.fullmatch(r"\d\d\d\d-\d\d-\d\d", args.date):
             print("date must be in the format YYYY-MM-DD")
             exit(1)
 
-    main(args.date)
+    main(args.date, args.dry_run)
 
