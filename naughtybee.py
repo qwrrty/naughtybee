@@ -11,30 +11,7 @@ import requests
 
 
 SPELLINGBEE_URL = "https://www.nytimes.com/puzzles/spelling-bee"
-NAUGHTY_WORDS = [
-    "sexy", "sexual", "sexually", "sexuality",
-    "cock", "penis", "prick", "dick", "erection", "dong", "wang", "phallus", "pecker", "bone", "boner", "boned", "boning",
-    "ball", "balls", "testicle", "ballsack",
-    "vagina", "vulva", "labia", "pussy", "cunt", "snatch", "beaver", "fanny", "muff", "twat", "poon", "poontang",
-    "quim", "yoni", "minge", "punani", "clit", "clitoris", "clitty",
-    "arse", "butt", "arsehole", "butthole", "asshole", "anal", "anally", "tush", "tushy", "buttock", "backside", "derriere", "booty", "bung", "bunghole", "taint",
-    "shit", "crap", "shitty", "crappy", "poop", "poopy", "pooping", "scat",
-    "peeing", "piss", "pissing", "pissed", "urine", "urinate", "urination",
-    "fart", "farting",
-    "boob", "breast", "titty", "teat", "mammary", "bosom", "nipple", "topless",
-    "fuck", "fucking", "fucker", "fucked", "bang", "banging", "banged", "screw", "screwing", "screwed", "hump", "humping", "humped",
-    "coitus", "copulate", "lovemaking", "nookie", "poontang", "shag", "shagging", "bareback",
-    "fellatio", "fellator", "blowjob", "blowing", "blow",
-    "lick", "licking", "licked", "suck", "sucking", "sucked", "sucker", "cocksucker", "cocksucking",
-    "sadism", "sadist", "kink", "kinky", "orgy", "sodomy", "sodomize", "voyeur",
-    "naked", "nude", "nudist", "nudity", "porn", "porno", "smut", "shaved",
-    "dyke", "bulldyke", "lesbian", "faggot", "faggy", "queer", "twink", "twinkie", "bitch",
-    "slut", "slutty", "swinging", "swinger", "whore",
-    "vibrator", "dildo", "pegged", "pegging", "strapon", "bugger",
-    "jerkoff", "jackoff", "wank", "wanker", "wanking",
-    "come", "cream", "creamed", "creaming", "squirt", "squirting", "orgasm", "climax", "jizz", "semen", "spunk",
-    "felch", "incest", "raping", "rapist", "rape", "raped",
-]
+NAUGHTY_WORDS_FILE = "wordlist.txt"
 
 
 class SpellingBeeScraper(HTMLParser):
@@ -56,22 +33,31 @@ class SpellingBeeScraper(HTMLParser):
                 self.gamedata = json.loads(data[18:])
 
 
-def fetch_sb_words(date: str = ""):
-    """Fetch the Spelling Bee answer words for the specified date (default: today)"""
-    url = SPELLINGBEE_URL
-    if date:
-        url += "/" + date
-    r = requests.get(url)
-    p = SpellingBeeScraper()
-    p.feed(r.text)
-    return p.gamedata["today"]["answers"]
+class NaughtyBee():
+    puzzle_words: list[str] = []
+    naughty_words: list[str] = []
+
+    def __init__(self, wordfile=NAUGHTY_WORDS_FILE):
+        with open(wordfile) as f:
+            self.naughty_words = [w.strip() for w in f.readlines()]
+
+    def fetch_words(self, date="", base_url=SPELLINGBEE_URL):
+        """Fetch the Spelling Bee answer words for the specified date (default: today)"""
+        url = f"{base_url}/{date}"
+        r = requests.get(url)
+        p = SpellingBeeScraper()
+        p.feed(r.text)
+        self.puzzle_words = p.gamedata["today"]["answers"]
+
+    def find_naughty_words(self):
+        if not self.puzzle_words:
+            self.fetch_words()
+        return set(self.puzzle_words) & set(self.naughty_words)
 
 
 def main(date: str = ""):
-    sb_words = fetch_sb_words(date)
-
-    matches = set(NAUGHTY_WORDS) & set(sb_words)
-    print(matches)
+    bee = NaughtyBee()
+    naughty_words = bee.find_naughty_words()
 
 
 if __name__ == "__main__":
