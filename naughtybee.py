@@ -62,6 +62,10 @@ def main(date="", dry_run=False):
     naughty_words = bee.find_naughty_words()
     post_text = "\n".join([w.upper() for w in sorted(naughty_words)])
 
+    if not post_text:
+        print("post_text is empty, exiting")
+        exit(0)
+
     with open(BSKY_CREDS_FILE, "r") as f:
         creds = json.load(f)
     client = Client()
